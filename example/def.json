@@ -1,0 +1,9 @@
+[
+  {
+    "prefix": "sheet",
+	"suffixes": [
+		"32bpp",
+		"indexed"
+		]
+  }
+]
