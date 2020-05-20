@@ -9,11 +9,9 @@ All inputs must be PNG and all outputs are PNG.
 
 ## Usage
 
-```
-splatter -i input_directory -o output_directory -d def.json -m 8
+`splatter -i input_directory -o output_directory -d def.json -m 8`
 
-splatter -input_dir input_directory -output_dir output_directory -definition def.json -margin 8
-```
+`splatter -input_dir input_directory -output_dir output_directory -definition def.json -margin 8`
 
 (Both are equivalent)
 
