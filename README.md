@@ -9,15 +9,16 @@ All inputs must be PNG and all outputs are PNG.
 
 ## Usage
 
-`splatter -i input_directory -o output_directory -d def.json -m 8`
-`splatter -input_dir input_directory -output_dir output_directory -definition def.json -margin 8`
+```
+splatter -i input_directory -o output_directory -d def.json -m 8
+
+splatter -input_dir input_directory -output_dir output_directory -definition def.json -margin 8
+```
 
 (Both are equivalent)
 
 `input_directory` is the directory containing your source input files. `output_directory` is where you want to put
-the output files. `def.json` is a definition file, of which more details below.
-
-Margin is the amount of vertical space to leave between rows, for input files which do not include this.
+the output files. `def.json` is a definition file, of which more details below. `margin` is the amount of vertical space to leave between rows, for input files which do not include this.
 
 ## Definition file
 
