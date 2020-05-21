@@ -18,6 +18,8 @@ All inputs must be PNG and all outputs are PNG.
 `input_directory` is the directory containing your source input files. `output_directory` is where you want to put
 the output files. `def.json` is a definition file, of which more details below. `margin` is the amount of vertical space to leave between rows, for input files which do not include this.
 
+A mask (see below) can optionally be supplied with the `-mask` or `-k` parameter.
+
 ## Definition file
 
 A definition file is an array of rules for creating spritesheets. An example file looks like this:
@@ -29,19 +31,25 @@ A definition file is an array of rules for creating spritesheets. An example fil
 	"suffixes": [
 		"32bpp",
 		"indexed"
-		]
+		],
+    "mask": "mask.png"
   }
 ]
 ```
 
 Each item has the following elements:
 
+
 * `prefix` the start of an image filename.
 * `suffix` the end of an image filename. This is useful for dealing with e.g. the output of GoRender which will produce
   files for `_32bpp`, `_8bpp` and `_mask`.
-  
+* `mask` (optional) a .PNG file to use as a mask. When compositing, only areas of the mask that are transparent will
+   have pixel data from the input sprites written to them. This can also be globally supplied as a command line
+   parameter, `-k`. The definition's mask takes precedence over the command line one.
+     
 All files which start `prefix` and end with the chosen `suffix` will be included (in alphabetical order) in the
-resulting spritesheet.
+resulting spritesheet. This is useful to note when working with mask files, which add a constraint to the order
+in which sprites can be laid out.
 
 ## Indexed vs. RGBA
 

@@ -14,7 +14,7 @@ func TestGetImageMap(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       args
-		wantResult map[string][]string
+		wantResult ImageSpecMap
 	}{
 		{
 			name: "Ordered file list",
@@ -25,9 +25,9 @@ func TestGetImageMap(t *testing.T) {
 				}},
 				files: []string{"foo_1_a.png", "foo_1_b.png", "foo_2_a.png", "foo_2_b.png"},
 			},
-			wantResult: map[string][]string{
-				"foo_a": {"foo_1_a.png", "foo_2_a.png"},
-				"foo_b": {"foo_1_b.png", "foo_2_b.png"},
+			wantResult: ImageSpecMap{
+				"foo_a": ImageSpec{Files: []string{"foo_1_a.png", "foo_2_a.png"}},
+				"foo_b": ImageSpec{Files: []string{"foo_1_b.png", "foo_2_b.png"}},
 			},
 		},
 		{
@@ -39,9 +39,9 @@ func TestGetImageMap(t *testing.T) {
 				}},
 				files: []string{"foo_2_a.png", "foo_1_b.png", "foo_1_a.png", "foo_2_b.png"},
 			},
-			wantResult: map[string][]string{
-				"foo_a": {"foo_1_a.png", "foo_2_a.png"},
-				"foo_b": {"foo_1_b.png", "foo_2_b.png"},
+			wantResult: ImageSpecMap{
+				"foo_a": ImageSpec{Files: []string{"foo_1_a.png", "foo_2_a.png"}},
+				"foo_b": ImageSpec{Files: []string{"foo_1_b.png", "foo_2_b.png"}},
 			},
 		},
 	}

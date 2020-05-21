@@ -16,9 +16,11 @@ import (
 
 type Spritesheet struct {
 	sourceImages []image.Image
+	mask         image.Image
 }
 
 type SheetDefinition struct {
+	Mask     string   `json:"mask"`
 	Prefix   string   `json:"prefix"`
 	Suffixes []string `json:"suffixes"`
 }
@@ -30,19 +32,38 @@ func (s *Spritesheet) AddImage(filename string) (err error) {
 		s.sourceImages = make([]image.Image, 0)
 	}
 
-	f, err := os.Open(filename)
-	defer f.Close()
-	if err != nil {
-		return err
-	}
-
-	img, err := png.Decode(f)
+	img, err := getImage(filename)
 	if err != nil {
 		return err
 	}
 
 	s.sourceImages = append(s.sourceImages, img)
 	return nil
+}
+
+func (s *Spritesheet) AddMask(filename string) (err error) {
+	img, err := getImage(filename)
+	if err != nil {
+		return err
+	}
+
+	s.mask = img
+	return nil
+}
+
+func getImage(filename string) (img image.Image, err error) {
+	f, err := os.Open(filename)
+	defer f.Close()
+	if err != nil {
+		return
+	}
+
+	img, err = png.Decode(f)
+	if err != nil {
+		return
+	}
+
+	return
 }
 
 func (s *Spritesheet) GetOutput(filename string, margin int) {
@@ -65,9 +86,9 @@ func (s *Spritesheet) GetOutput(filename string, margin int) {
 
 	var output image.Image
 	if indexed {
-		output = getIndexedOutput(maxX, maxY, pal, s.sourceImages, margin)
+		output = getIndexedOutput(maxX, maxY, pal, s.sourceImages, s.mask, margin)
 	} else {
-		output = getRGBAOutput(maxX, maxY, s.sourceImages, margin)
+		output = getRGBAOutput(maxX, maxY, s.sourceImages, s.mask, margin)
 	}
 
 	outputFile, err := os.Create(filename)
@@ -78,9 +99,14 @@ func (s *Spritesheet) GetOutput(filename string, margin int) {
 	png.Encode(outputFile, output)
 }
 
-func getIndexedOutput(maxX int, maxY int, pal color.Palette, images []image.Image, margin int) *image.Paletted {
+func getIndexedOutput(maxX int, maxY int, pal color.Palette, images []image.Image, mask image.Image, margin int) *image.Paletted {
 	output := image.NewPaletted(image.Rectangle{Max: image.Point{X: maxX, Y: maxY}}, pal)
 	maxIndex := uint8(len(pal) - 1)
+
+	hasMask := false
+	if mask != nil {
+		hasMask = true
+	}
 
 	// clear to index 255
 	for x := 0; x < maxX; x++ {
@@ -95,7 +121,17 @@ func getIndexedOutput(maxX int, maxY int, pal color.Palette, images []image.Imag
 
 		for x := 0; x < img.Bounds().Max.X; x++ {
 			for j := 0; j < img.Bounds().Max.Y; j++ {
-				output.SetColorIndex(x, y+j, pImg.ColorIndexAt(x, j))
+				if !hasMask {
+					output.SetColorIndex(x, y+j, pImg.ColorIndexAt(x, j))
+				} else {
+					_, _, _, a := mask.At(x, y+j).RGBA()
+					if a == 0 {
+						output.SetColorIndex(x, y+j, pImg.ColorIndexAt(x, j))
+					} else {
+						output.SetColorIndex(x, y+j, 0)
+					}
+				}
+
 			}
 		}
 
@@ -105,19 +141,34 @@ func getIndexedOutput(maxX int, maxY int, pal color.Palette, images []image.Imag
 	return output
 }
 
-func getRGBAOutput(maxX int, maxY int, images []image.Image, margin int) *image.RGBA {
+func getRGBAOutput(maxX int, maxY int, images []image.Image, mask image.Image, margin int) *image.RGBA {
 	bounds := image.Rectangle{Max: image.Point{X: maxX, Y: maxY}}
 	output := image.NewRGBA(bounds)
+
+	hasMask := false
+	if mask != nil {
+		hasMask = true
+	}
+
 	// clear to white
 	draw.Draw(output, bounds, &image.Uniform{C: color.White}, image.Point{}, draw.Src)
 
 	y := 0
 	for _, img := range images {
-		drawBounds := image.Rectangle{
-			Min: image.Point{X: 0, Y: y},
-			Max: image.Point{X: img.Bounds().Max.X, Y: y + img.Bounds().Max.Y},
+		for x := 0; x < img.Bounds().Max.X; x++ {
+			for j := 0; j < img.Bounds().Max.Y; j++ {
+				if !hasMask {
+					output.Set(x, y+j, img.At(x, j))
+				} else {
+					_, _, _, a := mask.At(x, y+j).RGBA()
+					if a == 0 {
+						output.Set(x, y+j, img.At(x, j))
+					} else {
+						output.Set(x, y+j, color.Transparent)
+					}
+				}
+			}
 		}
-		draw.Draw(output, drawBounds, img, image.Point{}, draw.Src)
 
 		y += img.Bounds().Max.Y + margin
 	}
@@ -125,23 +176,32 @@ func getRGBAOutput(maxX int, maxY int, images []image.Image, margin int) *image.
 	return output
 }
 
-func GetImageMap(definitions SheetDefinitions, files []string) (result map[string][]string) {
+type ImageSpec struct {
+	Files []string
+	Mask  string
+}
+
+type ImageSpecMap map[string]ImageSpec
+
+func GetImageMap(definitions SheetDefinitions, files []string) (result ImageSpecMap) {
 	sort.Strings(files)
 
-	result = make(map[string][]string)
-	for _, file := range files {
-		for _, definition := range definitions {
-			for _, suffix := range definition.Suffixes {
+	result = make(map[string]ImageSpec)
+	for _, definition := range definitions {
+		for _, suffix := range definition.Suffixes {
+			name := definition.Prefix + "_" + suffix
+
+			is := ImageSpec{}
+			is.Mask = definition.Mask
+			is.Files = make([]string, 0)
+
+			for _, file := range files {
 				if strings.HasPrefix(file, definition.Prefix) && strings.HasSuffix(file, suffix+".png") {
-					name := definition.Prefix + "_" + suffix
-					if r, ok := result[name]; !ok {
-						result[name] = make([]string, 0)
-						result[name] = append(result[name], file)
-					} else {
-						result[name] = append(r, file)
-					}
+					is.Files = append(is.Files, file)
 				}
 			}
+
+			result[name] = is
 		}
 	}
 

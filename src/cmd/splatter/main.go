@@ -12,7 +12,8 @@ import (
 type Flags struct {
 	InputDir, OutputDir string
 	DefinitionFile      string
-	Margin				int
+	Mask                string
+	Margin              int
 }
 
 var flags Flags
@@ -22,12 +23,14 @@ func init() {
 	flag.StringVar(&flags.InputDir, "input_dir", "", "directory to scan for image files (default: current directory)")
 	flag.StringVar(&flags.OutputDir, "output_dir", "", "directory to output files to (default: current directory)")
 	flag.StringVar(&flags.DefinitionFile, "definition", "def.json", "JSON file containing the spritesheet definitions (default: def.json)")
+	flag.StringVar(&flags.Mask, "mask", "", "Optional PNG mask file for determining output shape")
 	flag.IntVar(&flags.Margin, "margin", 0, "Vertical margin to leave between rows in the output")
 
 	// Short format
 	flag.StringVar(&flags.InputDir, "i", "", "shorthand for -input_dir")
 	flag.StringVar(&flags.OutputDir, "o", "", "shorthand for -output_dir")
 	flag.StringVar(&flags.DefinitionFile, "d", "def.json", "shorthand for -definition")
+	flag.StringVar(&flags.Mask, "k", "", "Shorthand for -mask")
 	flag.IntVar(&flags.Margin, "m", 0, "shorthand for -margin")
 
 }
@@ -63,8 +66,15 @@ func main() {
 
 	for k, v := range m {
 		s := combiner.Spritesheet{}
-		for _, img := range v {
+
+		for _, img := range v.Files {
 			s.AddImage(flags.InputDir + img)
+		}
+
+		if len(v.Mask) > 0 {
+			s.AddMask(v.Mask)
+		} else if len(flags.Mask) > 0 {
+			s.AddMask(flags.Mask)
 		}
 
 		outputFilename := flags.OutputDir + k + ".png"
