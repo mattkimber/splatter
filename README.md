@@ -37,10 +37,29 @@ A definition file is an array of rules for creating spritesheets. An example fil
 ]
 ```
 
+Or, for multiple sheets:
+
+```json
+[
+  {
+    "prefixes": [
+        "sheet1",
+        "sheet2"
+    ],
+	"suffixes": [
+		"32bpp",
+		"indexed"
+		],
+    "mask": "mask.png"
+  }
+]
+```
+
 Each item has the following elements:
 
 
-* `prefix` the start of an image filename.
+* `prefix` the start of an image filename. `prefixes` can alternatively be used as an array to process multiple files
+   with the same settings.
 * `suffix` the end of an image filename. This is useful for dealing with e.g. the output of GoRender which will produce
   files for `_32bpp`, `_8bpp` and `_mask`.
 * `mask` (optional) a .PNG file to use as a mask. When compositing, only areas of the mask that are transparent will

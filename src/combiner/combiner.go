@@ -23,6 +23,7 @@ type SheetDefinition struct {
 	Mask     string   `json:"mask"`
 	Prefix   string   `json:"prefix"`
 	Suffixes []string `json:"suffixes"`
+	Prefixes []string `json:"prefixes"`
 }
 
 type SheetDefinitions []SheetDefinition
@@ -187,21 +188,29 @@ func GetImageMap(definitions SheetDefinitions, files []string) (result ImageSpec
 	sort.Strings(files)
 
 	result = make(map[string]ImageSpec)
+
 	for _, definition := range definitions {
-		for _, suffix := range definition.Suffixes {
-			name := definition.Prefix + "_" + suffix
 
-			is := ImageSpec{}
-			is.Mask = definition.Mask
-			is.Files = make([]string, 0)
+		if len(definition.Prefixes) == 0 {
+			definition.Prefixes = []string{definition.Prefix}
+		}
 
-			for _, file := range files {
-				if strings.HasPrefix(file, definition.Prefix) && strings.HasSuffix(file, suffix+".png") {
-					is.Files = append(is.Files, file)
+		for _, prefix := range definition.Prefixes {
+			for _, suffix := range definition.Suffixes {
+				name := prefix + "_" + suffix
+
+				is := ImageSpec{}
+				is.Mask = definition.Mask
+				is.Files = make([]string, 0)
+
+				for _, file := range files {
+					if strings.HasPrefix(file, prefix) && strings.HasSuffix(file, suffix+".png") {
+						is.Files = append(is.Files, file)
+					}
 				}
-			}
 
-			result[name] = is
+				result[name] = is
+			}
 		}
 	}
 

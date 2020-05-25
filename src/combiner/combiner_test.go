@@ -44,6 +44,22 @@ func TestGetImageMap(t *testing.T) {
 				"foo_b": ImageSpec{Files: []string{"foo_1_b.png", "foo_2_b.png"}},
 			},
 		},
+		{
+			name: "Prefix array",
+			args: args{
+				definitions: []SheetDefinition{{
+					Prefixes: []string{"foo_1", "foo_2"},
+					Suffixes: []string{"a", "b"},
+				}},
+				files: []string{"foo_2_a.png", "foo_1_b.png", "foo_1_a.png", "foo_2_b.png"},
+			},
+			wantResult: ImageSpecMap{
+				"foo_1_a": ImageSpec{Files: []string{"foo_1_a.png"}},
+				"foo_2_a": ImageSpec{Files: []string{"foo_2_a.png"}},
+				"foo_1_b": ImageSpec{Files: []string{"foo_1_b.png"}},
+				"foo_2_b": ImageSpec{Files: []string{"foo_2_b.png"}},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
