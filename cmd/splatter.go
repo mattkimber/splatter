@@ -1,8 +1,8 @@
 package main
 
 import (
-	"combiner"
 	"flag"
+	"github.com/mattkimber/splatter/internal/combiner"
 	"io/ioutil"
 	"log"
 	"os"
